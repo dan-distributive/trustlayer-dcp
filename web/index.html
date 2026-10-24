@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TrustLayer on DCP</title>
+<link rel="icon" href="data:,">
+<style>
+  :root {
+    --bg:#f3f4f7; --panel:#ffffff; --panel-2:#fbfbfd; --ink:#1a2130; --muted:#5c6578;
+    --border:#d7dbe3; --border-strong:#c3c9d6; --accent:#1f6fa8; --accent-ink:#ffffff;
+    --ok:#1f8a5f; --ok-bg:rgba(31,138,95,0.10);
+    --warn:#b9740b; --warn-bg:rgba(185,116,11,0.10);
+    --err:#c1332f; --err-bg:rgba(193,51,47,0.10);
+    --c0:#2a6fb0; --c1:#d08a1e; --c2:#8a56c2; --c3:#c1332f; --c4:#1f8a5f; --c5:#5c6578;
+    --shadow:0 1px 2px rgba(20,24,33,0.06), 0 8px 20px -12px rgba(20,24,33,0.14);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:#10131a; --panel:#171b25; --panel-2:#1c212c; --ink:#e7ebf3; --muted:#98a2b5;
+      --border:#2a3142; --border-strong:#3a4258; --accent:#5fa8dd; --accent-ink:#0a1420;
+      --ok:#5cc491; --ok-bg:rgba(92,196,145,0.12);
+      --warn:#e3ab48; --warn-bg:rgba(227,171,72,0.12);
+      --err:#e8756f; --err-bg:rgba(232,117,111,0.12);
+      --c0:#6aaee6; --c1:#e7ad55; --c2:#b48ae6; --c3:#e8756f; --c4:#5cc491; --c5:#98a2b5;
+      --shadow:0 1px 2px rgba(0,0,0,0.4), 0 10px 24px -14px rgba(0,0,0,0.6);
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family: ui-sans-serif, "Inter", "Segoe UI", system-ui, -apple-system, sans-serif; line-height:1.5; }
+  main { max-width: 960px; margin: 0 auto; padding: 40px 16px 96px; }
+  code, .mono, .tabular { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-variant-numeric: tabular-nums; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .eyebrow { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); font-weight: 700; margin: 0 0 8px; }
+  .lede { color: var(--muted); font-size: 14px; max-width: 70ch; margin: 0 0 28px; }
+  section.card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 20px 22px; margin-bottom: 20px; box-shadow: var(--shadow); }
+  h2 { font-size: 15px; margin: 0 0 4px; display:flex; align-items:center; gap: 8px; }
+  h2 .n { display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; background: var(--accent); color: var(--accent-ink); font-size: 11px; font-weight:700; }
+  .sub { color: var(--muted); font-size: 12.5px; margin: 0 0 16px; }
+  label { display:block; font-size: 12.5px; color: var(--muted); margin-bottom: 4px; font-weight: 600; }
+  .field { margin-bottom: 14px; }
+  .row { display:flex; gap: 14px; flex-wrap: wrap; }
+  .row > .field { flex: 1; min-width: 150px; }
+  input[type=text], input[type=number], input[type=password], select {
+    width:100%; padding: 8px 10px; border-radius: 7px; border: 1px solid var(--border-strong); background: var(--panel-2); color: var(--ink); font: inherit; font-size: 13px;
+  }
+  .checks { display:flex; flex-wrap:wrap; gap: 6px 14px; font-size: 13px; }
+  .checks label { display:flex; align-items:center; gap:6px; font-weight:500; color: var(--ink); margin:0; }
+  button { font: inherit; font-size: 13px; font-weight: 600; padding: 8px 16px; border-radius: 7px; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); cursor: pointer; }
+  button.secondary { background: transparent; color: var(--accent); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .group-row { display:flex; gap: 8px; }
+  .group-row button { padding: 6px 10px; }
+  .drop { border: 1.5px dashed var(--border-strong); border-radius: 10px; padding: 18px; text-align:center; color: var(--muted); font-size: 13px; background: var(--panel-2); }
+  .drop.over { border-color: var(--accent); color: var(--accent); }
+  table { width:100%; border-collapse: collapse; font-size: 12.5px; }
+  th, td { text-align:left; padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  th { color: var(--muted); font-weight: 600; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.04em; }
+  td.num { text-align:right; font-family: ui-monospace, Menlo, monospace; font-variant-numeric: tabular-nums; }
+  .tag { display:inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; }
+  .tag.genuine { color: var(--ok); background: var(--ok-bg); }
+  .tag.synthetic { color: var(--err); background: var(--err-bg); }
+  .tag.wrong { outline: 1.5px solid var(--warn); }
+  .pill { display:inline-flex; align-items:center; gap:6px; font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: var(--panel-2); border: 1px solid var(--border); color: var(--muted); }
+  .pill .dot { width:7px; height:7px; border-radius:50%; background: currentColor; }
+  .pill.run { color: var(--accent); } .pill.ok { color: var(--ok); } .pill.err { color: var(--err); }
+  .log { font-family: ui-monospace, Menlo, monospace; font-size: 11.5px; background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; max-height: 180px; overflow:auto; margin-top: 12px; white-space: pre-wrap; }
+  .log .err { color: var(--err); }
+  .bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin-top: 10px; }
+  .bar > div { height: 100%; width: 0; background: var(--accent); transition: width .3s; }
+  .stats { display:flex; gap: 24px; flex-wrap: wrap; margin: 4px 0 16px; }
+  .stat .v { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .stat .k { font-size: 12px; color: var(--muted); }
+  .legend { display:flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin: 0 0 8px; }
+  .legend span::before { content:""; display:inline-block; width:10px; height:3px; margin-right:6px; vertical-align: middle; background: var(--sw); }
+  svg.tl { display:block; }
+  .scroll { overflow-x:auto; }
+  .warnbox { background: var(--warn-bg); color: var(--warn); border-radius: 8px; padding: 10px 12px; font-size: 13px; margin-bottom: 20px; }
+  footer { color: var(--muted); font-size: 12px; margin-top: 32px; }
+  @media (max-width: 600px) { section.card { padding: 16px; } .hide-sm { display:none; } }
+</style>
+</head>
+<body>
+<main>
+  <p class="eyebrow">TrustLayer · DCP</p>
+  <h1>Speech deepfake scan on the DCP network</h1>
+  <p class="lede">
+    Score audio clips as genuine or synthetic with NAVER's pretrained AASIST model, converted to ONNX.
+    Your browser only packs the files. Each DCP worker decodes, resamples, slices the audio into 4-second windows,
+    adds the noise conditions you choose and runs the model.
+  </p>
+  <div class="warnbox" id="fileWarn" hidden>
+    This page is opened as a <code>file://</code> URL, so it can't load the model or sample clips.
+    Serve this folder instead: <code>cd web &amp;&amp; python3 -m http.server 8000</code>, then open <code>http://localhost:8000/</code>.
+  </div>
+
+  <section class="card">
+    <h2><span class="n">1</span>DCP account</h2>
+    <p class="sub">Your API key sets the identity the job runs under; payment comes from the wallet you pick when you deploy. Compute groups decide which workers can take the slices.</p>
+    <div class="field">
+      <label for="apiKey">API key (identity)</label>
+      <input type="text" id="apiKey" placeholder="0x… (blank: use the wallet picker)">
+    </div>
+    <div class="field">
+      <label>Compute group(s)</label>
+      <div id="groupRows" style="display:flex; flex-direction:column; gap:8px"></div>
+      <button type="button" class="secondary" id="addGroup" style="margin-top:8px">+ Add group</button>
+      <p class="sub" style="margin:6px 0 0">Leave the joinKey blank to deploy to the public network.</p>
+    </div>
+    <div class="row">
+      <div class="field"><label for="offer">Slice payment offer (DCC)</label><input type="number" id="offer" value="1.000" min="0" step="0.001"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="n">2</span>Audio</h2>
+    <p class="sub">WAV (PCM or float) or FLAC, any sample rate, mono or stereo. Labels come from filenames that start with <code>genuine</code>/<code>bonafide</code> or <code>synthetic</code>/<code>spoof</code>; you can change them.</p>
+    <div class="drop" id="drop">
+      Drop audio files here, or <button type="button" class="secondary" id="pick" style="padding:3px 10px">choose files</button>
+      <button type="button" class="secondary" id="samples" style="padding:3px 10px">use sample clips</button>
+      <input type="file" id="fileInput" multiple accept=".wav,.flac,audio/wav,audio/flac" hidden>
+    </div>
+    <div id="fileSummary" class="sub" style="margin:10px 0 0"></div>
+    <div class="scroll"><table id="fileTable" hidden><thead><tr><th>File</th><th class="hide-sm">Size</th><th>Label</th><th></th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <section class="card">
+    <h2><span class="n">3</span>Conditions</h2>
+    <p class="sub">Each worker adds white noise at the chosen signal-to-noise ratios, seeded per file, window and seed, so a repeat run gives the same numbers.</p>
+    <div class="field">
+      <label>Noise (SNR)</label>
+      <div class="checks" id="snrChecks"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="seeds">Seeds per SNR</label><input type="number" id="seeds" value="1" min="1" max="50"></div>
+      <div class="field"><label for="hop">Window hop (s)</label><input type="number" id="hop" value="1" min="0.25" step="0.25"></div>
+      <div class="field"><label for="maxWin">Max windows per file (0 = all)</label><input type="number" id="maxWin" value="0" min="0"></div>
+      <div class="field"><label for="perSlice">Files per slice</label><input type="number" id="perSlice" value="4" min="1"></div>
+    </div>
+    <div class="checks"><label><input type="checkbox" id="webgpu"> Use WebGPU where the worker has it (wasm otherwise)</label></div>
+  </section>
+
+  <section class="card">
+    <h2><span class="n">4</span>Run</h2>
+    <p class="sub" id="planLine">Add some audio first.</p>
+    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center">
+      <button type="button" id="deploy" disabled>Deploy to DCP</button>
+      <button type="button" class="secondary" id="local" disabled title="Runs the same work function in this tab, no DCP, for testing">Run in this browser</button>
+      <button type="button" class="secondary" id="cancel" hidden>Cancel job</button>
+      <span class="pill" id="status"><span class="dot"></span>idle</span>
+    </div>
+    <div class="bar"><div id="bar"></div></div>
+    <div class="log" id="log" hidden></div>
+  </section>
+
+  <section class="card" id="resultsCard" hidden>
+    <h2>Results</h2>
+    <p class="sub">Margin = genuine logit − synthetic logit (a raw score, not a probability). The verdict uses the lowest-margin window, so one synthetic-looking window flags the file.</p>
+    <div class="stats" id="stats"></div>
+    <div class="scroll"><table id="accTable"></table></div>
+    <h2 style="margin-top:22px">Per file</h2>
+    <p class="sub">Each line is one condition; the points are 4-second windows across the clip. Below the dashed zero line, the model leans synthetic.</p>
+    <div class="legend" id="legend"></div>
+    <div class="scroll"><table id="resTable"></table></div>
+    <div style="display:flex; gap:10px; margin-top:16px">
+      <button type="button" class="secondary" id="dlCsv">Download CSV</button>
+      <button type="button" class="secondary" id="dlJson">Download JSON</button>
+    </div>
+  </section>
+
+  <footer>
+    Model: AASIST (NAVER Corp., MIT) trained on ASVspoof 2019 LA. It was not trained on modern voice cloning or on partly edited audio, so treat verdicts as a demonstration, not a forensic result.
+    Source: <a href="https://github.com/ReyanSehgal/TrustLayer-Camp-QMIND-MVP">TrustLayer-Camp-QMIND-MVP</a>.
+  </footer>
+</main>
+
+<script src="https://scheduler.distributed.computer/dcp-client/dcp-client.js"></script>
+<script src="aasist-work.js"></script>
+<script>
+'use strict';
+const $ = (id) => document.getElementById(id);
+const ORT_PACKAGES = ['onnxruntime-dcp/dcp-wasm.js', 'onnxruntime-dcp/dcp-ort.js'];
+const ORT_CDN = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.23.0/dist/';
+const SAMPLE_FILES = ['genuine_1.wav', 'genuine_2.wav', 'genuine_3.wav', 'genuine_4.wav', 'synthetic_1.wav', 'synthetic_2.wav',
+  'synthetic_3.wav', 'synthetic_4.wav', 'spliced_g_s_g.flac', 'genuine_1_44100.flac'];
+const SNR_CHOICES = [null, 30, 20, 10, 5, 0];
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('trustlayer:' + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem('trustlayer:' + k, JSON.stringify(v)); } catch { /* private mode */ } },
+};
+if (location.protocol === 'file:') $('fileWarn').hidden = false;
+
+/* ---------- account ---------- */
+$('apiKey').value = store.get('apiKey', '');
+$('apiKey').addEventListener('change', () => store.set('apiKey', $('apiKey').value.trim()));
+let groupRows = [];
+function addGroupRow(g = {}) {
+  const el = document.createElement('div');
+  el.className = 'group-row';
+  el.innerHTML = '<input type="text" placeholder="joinKey (blank = public)"><input type="password" placeholder="joinSecret"><button type="button" class="secondary" title="Remove">×</button>';
+  const [k, s, x] = el.children;
+  k.value = g.joinKey || ''; s.value = g.joinSecret || '';
+  const row = { el, k, s };
+  [k, s].forEach((i) => i.addEventListener('change', saveGroups));
+  x.addEventListener('click', () => {
+    if (groupRows.length > 1) { groupRows = groupRows.filter((r) => r !== row); el.remove(); } else { k.value = ''; s.value = ''; }
+    saveGroups();
+  });
+  groupRows.push(row);
+  $('groupRows').appendChild(el);
+}
+function saveGroups() { store.set('groups', groupRows.map((r) => ({ joinKey: r.k.value.trim(), joinSecret: r.s.value.trim() }))); }
+function computeGroups() {
+  const gs = groupRows.map((r) => ({ joinKey: r.k.value.trim(), joinSecret: r.s.value.trim() })).filter((g) => g.joinKey);
+  return gs.length ? gs.map((g) => (g.joinSecret ? g : { joinKey: g.joinKey })) : null;
+}
+store.get('groups', [{}]).forEach(addGroupRow);
+$('addGroup').addEventListener('click', () => addGroupRow());
+
+/* ---------- files ---------- */
+let files = [];   // { name, size, label, bytes: Uint8Array }
+function guessLabel(name) {
+  if (/^(genuine|bonafide)/i.test(name)) return 'genuine';
+  if (/^(synthetic|spoof)/i.test(name)) return 'synthetic';
+  return '';
+}
+async function addFiles(list) {
+  for (const f of list) {
+    if (!/\.(wav|flac)$/i.test(f.name)) continue;
+    if (files.some((x) => x.name === f.name)) continue;
+    files.push({ name: f.name, size: f.size, label: guessLabel(f.name), bytes: new Uint8Array(await f.arrayBuffer()) });
+  }
+  renderFiles();
+}
+function renderFiles() {
+  const tb = $('fileTable').tBodies[0];
+  tb.innerHTML = '';
+  for (const f of files) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="mono"></td><td class="num hide-sm">${(f.size / 1024).toFixed(0)} KB</td>
+      <td><select><option value="">unknown</option><option value="genuine">genuine</option><option value="synthetic">synthetic</option></select></td>
+      <td><button type="button" class="secondary" style="padding:2px 8px">×</button></td>`;
+    tr.cells[0].textContent = f.name;
+    const sel = tr.querySelector('select');
+    sel.value = f.label;
+    sel.addEventListener('change', () => { f.label = sel.value; });
+    tr.querySelector('button').addEventListener('click', () => { files = files.filter((x) => x !== f); renderFiles(); });
+    tb.appendChild(tr);
+  }
+  $('fileTable').hidden = !files.length;
+  const mb = files.reduce((a, f) => a + f.size, 0) / 1e6;
+  $('fileSummary').textContent = files.length ? `${files.length} file${files.length > 1 ? 's' : ''}, ${mb.toFixed(1)} MB` : '';
+  updatePlan();
+}
+$('pick').addEventListener('click', () => $('fileInput').click());
+$('fileInput').addEventListener('change', (e) => addFiles(e.target.files));
+const drop = $('drop');
+drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('over'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+drop.addEventListener('drop', (e) => { e.preventDefault(); drop.classList.remove('over'); addFiles(e.dataTransfer.files); });
+$('samples').addEventListener('click', async () => {
+  try {
+    const got = await Promise.all(SAMPLE_FILES.map(async (n) => {
+      const r = await fetch('samples/' + n);
+      if (!r.ok) throw new Error(`samples/${n}: HTTP ${r.status}`);
+      return new File([await r.blob()], n);
+    }));
+    addFiles(got);
+  } catch (e) { log('Could not load sample clips: ' + e.message, true); }
+});
+
+/* ---------- plan ---------- */
+const savedSnrs = store.get('snrs', [null, 20, 10, 0]);
+for (const snr of SNR_CHOICES) {
+  const l = document.createElement('label');
+  l.innerHTML = `<input type="checkbox" value="${snr === null ? 'null' : snr}"> ${snr === null ? 'clean' : snr + ' dB'}`;
+  l.firstChild.checked = savedSnrs.includes(snr);
+  l.firstChild.addEventListener('change', () => { store.set('snrs', plan().snrs); updatePlan(); });
+  $('snrChecks').appendChild(l);
+}
+['seeds', 'hop', 'maxWin', 'perSlice'].forEach((id) => $(id).addEventListener('input', updatePlan));
+function plan() {
+  const snrs = [...$('snrChecks').querySelectorAll('input:checked')].map((i) => (i.value === 'null' ? null : +i.value));
+  const nSeeds = Math.max(1, +$('seeds').value || 1);
+  return {
+    snrs: snrs.length ? snrs : [null],
+    seeds: Array.from({ length: nSeeds }, (_, i) => 42 + i),
+    hop: Math.round(Math.max(0.25, +$('hop').value || 1) * 16000),
+    maxWindows: Math.max(0, +$('maxWin').value || 0),
+  };
+}
+function nConditions(p) { return p.snrs.reduce((a, s) => a + (s === null ? 1 : p.seeds.length), 0); }
+function updatePlan() {
+  const p = plan(), per = Math.max(1, +$('perSlice').value || 1);
+  const slices = Math.ceil(files.length / per);
+  $('planLine').textContent = files.length
+    ? `${files.length} files × ${nConditions(p)} conditions in ${slices} slice${slices > 1 ? 's' : ''}. Window count depends on clip length (one per 4 s, hop ${p.hop / 16000} s).`
+    : 'Add some audio first.';
+  $('deploy').disabled = $('local').disabled = !files.length || running;
+}
+
+/* ---------- helpers ---------- */
+function bytesToB64(u8) {
+  let s = '';
+  for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
+  return btoa(s);
+}
+let modelB64 = null;
+async function getModel() {
+  if (!modelB64) {
+    const r = await fetch('aasist.onnx');
+    if (!r.ok) throw new Error('aasist.onnx: HTTP ' + r.status);
+    modelB64 = bytesToB64(new Uint8Array(await r.arrayBuffer()));
+  }
+  return modelB64;
+}
+function log(t, err) {
+  const el = $('log'); el.hidden = false;
+  const d = document.createElement('div'); if (err) d.className = 'err'; d.textContent = t;
+  el.appendChild(d); el.scrollTop = el.scrollHeight;
+}
+function status(kind, t) { $('status').className = 'pill ' + kind; $('status').innerHTML = '<span class="dot"></span>' + t; }
+function slicesFor(p) {
+  const per = Math.max(1, +$('perSlice').value || 1), out = [];
+  for (let i = 0; i < files.length; i += per) {
+    out.push({ items: files.slice(i, i + per).map((f) => ({ id: f.name, name: f.name, label: f.label || null, b64: bytesToB64(f.bytes) })) });
+  }
+  return out;
+}
+
+/* ---------- run on DCP ---------- */
+let running = false, currentJob = null, lastResults = [], lastPlan = null;
+let identityReady = null;
+function ensureIdentity() {
+  if (!identityReady) {
+    identityReady = (async () => {
+      const key = $('apiKey').value.trim();
+      if (key && !dcp.identity.check()) await dcp.identity.set(key);
+      await dcp.wallet.add(await dcp.wallet.get());
+    })().catch((e) => { identityReady = null; throw e; });
+  }
+  return identityReady;
+}
+function begin(p) {
+  running = true; lastResults = []; lastPlan = p;
+  $('log').innerHTML = ''; $('bar').style.width = '0';
+  updatePlan();
+  renderResults();
+}
+function finish() { running = false; currentJob = null; $('cancel').hidden = true; updatePlan(); }
+
+$('deploy').addEventListener('click', async () => {
+  const p = plan();
+  begin(p);
+  try {
+    if (typeof dcp === 'undefined') throw new Error('dcp-client did not load (check the network or an ad blocker)');
+    status('run', 'connecting');
+    await ensureIdentity();
+    const slices = slicesFor(p);
+    const options = { ep: $('webgpu').checked ? 'webgpu' : 'wasm', batch: 8, aggregate: 'min' };
+    const job = dcp.compute.for(slices, aasistWork, [await getModel(), p, options]);
+    job.requires(ORT_PACKAGES);
+    job.public = { name: `TrustLayer AASIST: ${files.length} clips`, description: 'Speech deepfake scoring (AASIST, ONNX)' };
+    const groups = computeGroups();
+    if (groups) job.computeGroups = groups;
+    currentJob = job;
+    let done = 0;
+    job.on('accepted', () => { status('run', 'running'); log(`job ${job.id} accepted: ${slices.length} slices`); $('cancel').hidden = false; });
+    job.on('readystatechange', (s) => log('state: ' + s));
+    job.on('result', (ev) => {
+      done++;
+      $('bar').style.width = (100 * done / slices.length) + '%';
+      const env = ev.result && ev.result.env;
+      log(`slice ${ev.sliceNumber} done (${done}/${slices.length})` + (env ? `: ${env.windows} windows, ${(env.inferMs / 1000).toFixed(1)} s on ${env.ep}` : ''));
+      lastResults.push(ev.result);
+      renderResults();
+    });
+    job.on('error', (e) => log('slice error: ' + (e.message || e), true));
+    job.on('console', (c) => log('worker: ' + (c.message ?? JSON.stringify(c))));
+    status('run', 'deploying');
+    await job.exec(+$('offer').value || dcp.compute.marketValue);
+    status('ok', 'done');
+  } catch (e) {
+    status('err', 'failed');
+    log(String(e && e.message || e), true);
+  } finally { finish(); }
+});
+$('cancel').addEventListener('click', async () => {
+  if (!currentJob) return;
+  try { await currentJob.cancel(); log('job cancelled'); status('err', 'cancelled'); } catch (e) { log('cancel failed: ' + e.message, true); }
+});
+
+/* ---------- run in this tab (testing) ---------- */
+function loadScript(src) {
+  return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = () => bad(new Error('failed to load ' + src)); document.head.appendChild(s); });
+}
+$('local').addEventListener('click', async () => {
+  const p = plan();
+  begin(p);
+  const hadRequire = 'require' in window, oldRequire = window.require, oldProgress = window.progress;
+  try {
+    status('run', 'loading runtime');
+    if (!window.ortLocal) {
+      const saved = window.ort;
+      await loadScript(ORT_CDN + 'ort.wasm.min.js');
+      window.ortLocal = window.ort;
+      window.ortLocal.env.wasm.wasmPaths = ORT_CDN;
+      window.ortLocal.env.wasm.numThreads = 1;
+      window.ort = saved;
+    }
+    window.require = (n) => (n === 'dcp-ort.js' ? window.ortLocal : {});
+    window.progress = () => true;
+    const slices = slicesFor(p), model = await getModel();
+    status('run', 'running locally');
+    for (let i = 0; i < slices.length; i++) {
+      const res = await aasistWork(slices[i], model, p, { ep: 'wasm', batch: 8, aggregate: 'min' });
+      lastResults.push(res);
+      $('bar').style.width = (100 * (i + 1) / slices.length) + '%';
+      log(`local slice ${i + 1}/${slices.length}: ${res.env.windows} windows, ${(res.env.inferMs / 1000).toFixed(1)} s`);
+      renderResults();
+    }
+    status('ok', 'done (local)');
+  } catch (e) {
+    status('err', 'failed');
+    log(String(e && e.message || e), true);
+  } finally {
+    if (hadRequire) window.require = oldRequire; else delete window.require;
+    if (oldProgress) window.progress = oldProgress; else delete window.progress;
+    window.ort = undefined;   // ORT's UMD script declares a global var, which can't be deleted
+    finish();
+  }
+});
+
+/* ---------- results ---------- */
+const condName = (c) => (c.snr === null ? 'clean' : `${c.snr} dB` + (lastPlan && lastPlan.seeds.length > 1 ? ` s${c.seed}` : ''));
+const snrKey = (c) => (c.snr === null ? 'clean' : `${c.snr} dB`);
+function allFiles() { return lastResults.flatMap((r) => r.files); }
+function rows() {
+  const out = [];
+  for (const f of allFiles()) {
+    if (f.error) { out.push({ id: f.id, label: f.label, error: f.error }); continue; }
+    for (const c of f.conditions) {
+      out.push({ id: f.id, label: f.label, snr: c.snr, seed: c.seed, windows: c.margins.length, first: c.first, min: c.min, mean: c.mean,
+        prediction: c.prediction, correct: f.label ? f.label === c.prediction : null, margins: c.margins, starts: f.windowStarts });
+    }
+  }
+  return out;
+}
+function renderResults() {
+  const fs_ = allFiles();
+  $('resultsCard').hidden = !fs_.length;
+  if (!fs_.length) return;
+  const rs = rows();
+  const env = lastResults.map((r) => r.env);
+  const windows = env.reduce((a, e) => a + e.windows, 0), secs = env.reduce((a, e) => a + e.inferMs, 0) / 1000;
+  const labelled = rs.filter((r) => r.correct !== null && r.correct !== undefined);
+  $('stats').innerHTML = [
+    [fs_.length, 'files scored'], [windows, 'model runs'], [secs.toFixed(0) + ' s', 'worker inference time'],
+    [labelled.length ? `${labelled.filter((r) => r.correct).length}/${labelled.length}` : 'n/a', 'correct (labelled rows)'],
+  ].map(([v, k]) => `<div class="stat"><div class="v">${v}</div><div class="k">${k}</div></div>`).join('');
+
+  // accuracy by condition (seeds pooled)
+  const conds = [...new Set(rs.filter((r) => !r.error).map((r) => snrKey(r)))];
+  const acc = (pred) => { const xs = labelled.filter(pred); return xs.length ? `${xs.filter((r) => r.correct).length}/${xs.length}` : '–'; };
+  $('accTable').innerHTML = '<thead><tr><th>Condition</th><th style="text-align:right">Genuine kept genuine</th><th style="text-align:right">Synthetic caught</th><th style="text-align:right">All</th></tr></thead><tbody>' +
+    conds.map((c) => `<tr><td>${c}</td><td class="num">${acc((r) => snrKey(r) === c && r.label === 'genuine')}</td>
+      <td class="num">${acc((r) => snrKey(r) === c && r.label === 'synthetic')}</td><td class="num">${acc((r) => snrKey(r) === c)}</td></tr>`).join('') + '</tbody>';
+
+  // per file: verdict per condition + window timeline
+  const colorOf = (i) => `var(--c${i % 6})`;
+  const condList = fs_.find((f) => !f.error)?.conditions.map(condName) || [];
+  $('legend').innerHTML = condList.map((n, i) => `<span style="--sw:${colorOf(i)}">${n}</span>`).join('');
+  const head = '<thead><tr><th>File</th><th>Label</th>' + condList.map((n) => `<th>${n}</th>`).join('') + '<th>Windows</th></tr></thead>';
+  const body = fs_.map((f) => {
+    if (f.error) return `<tr><td class="mono">${esc(f.id)}</td><td colspan="${condList.length + 2}" style="color:var(--err)">${esc(f.error)}</td></tr>`;
+    const cells = f.conditions.map((c) => {
+      const wrong = f.label && f.label !== c.prediction;
+      return `<td><span class="tag ${c.prediction}${wrong ? ' wrong' : ''}" title="${wrong ? 'wrong' : ''}">${c.prediction}</span> <span class="mono" style="font-size:11.5px">${c.min.toFixed(2)}</span></td>`;
+    }).join('');
+    return `<tr><td class="mono">${esc(f.id)}<div class="sub" style="margin:0">${f.format}, ${f.sourceRate} Hz, ${f.seconds} s</div></td>
+      <td>${f.label || '–'}</td>${cells}<td>${timeline(f, colorOf)}</td></tr>`;
+  }).join('');
+  $('resTable').innerHTML = head + '<tbody>' + body + '</tbody>';
+}
+function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+function timeline(f, colorOf) {
+  const W = 180, H = 56, pad = 4;
+  const all = f.conditions.flatMap((c) => c.margins);
+  const lo = Math.min(-2, ...all), hi = Math.max(2, ...all);
+  const t1 = Math.max(f.windowStarts[f.windowStarts.length - 1], 0.001);
+  const x = (t) => pad + (f.windowStarts.length > 1 ? (t / t1) : 0.5) * (W - 2 * pad);
+  const y = (m) => pad + (hi - m) / (hi - lo) * (H - 2 * pad);
+  let s = `<svg class="tl" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="margin per window">`;
+  s += `<line x1="0" x2="${W}" y1="${y(0)}" y2="${y(0)}" stroke="var(--border-strong)" stroke-dasharray="3 3"/>`;
+  f.conditions.forEach((c, i) => {
+    const pts = c.margins.map((m, k) => `${x(f.windowStarts[k]).toFixed(1)},${y(m).toFixed(1)}`);
+    if (pts.length > 1) s += `<polyline fill="none" stroke="${colorOf(i)}" stroke-width="1.5" points="${pts.join(' ')}"/>`;
+    pts.forEach((p) => { const [px, py] = p.split(','); s += `<circle cx="${px}" cy="${py}" r="2.2" fill="${colorOf(i)}"><title>${condName(c)}</title></circle>`; });
+  });
+  return s + '</svg>';
+}
+function download(name, text, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type }));
+  a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+$('dlCsv').addEventListener('click', () => {
+  const cols = ['id', 'label', 'snr', 'seed', 'windows', 'first', 'min', 'mean', 'prediction', 'correct', 'error'];
+  const q = (v) => (v === null || v === undefined ? '' : /[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v));
+  download('trustlayer-results.csv', [cols.join(',')].concat(rows().map((r) => cols.map((c) => q(r[c])).join(','))).join('\n') + '\n', 'text/csv');
+});
+$('dlJson').addEventListener('click', () => download('trustlayer-results.json', JSON.stringify({ plan: lastPlan, results: lastResults }, null, 1), 'application/json'));
+updatePlan();
+</script>
+</body>
+</html>

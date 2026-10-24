@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+.DS_Store
+deck/qa/
+results/*.log
+results/web-smoke.png
+models/export.log
