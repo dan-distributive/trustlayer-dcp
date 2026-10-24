@@ -310,6 +310,7 @@ Visual: the table fills row by row, each row getting a green tick as it appears.
   const shot = path.join(__dirname, "web-results.png");
   s.addImage({ path: shot, x: 0.6, y: 1.4, w: 5.35 * 940 / 1155, h: 5.35, altText: "Results section of the TrustLayer web page" });
   bullets(s, [
+    "Open dcp.dev/projects/trustlayer. Nothing to install.",
     "Paste an API key, pick compute groups and a payment offer.",
     "Drop WAV or FLAC files, or load the sample clips.",
     "Choose noise levels, seeds and how far windows slide.",
@@ -318,7 +319,7 @@ Visual: the table fills row by row, each row getting a green tick as it appears.
     "\"Run in this browser\" runs the same work function in the tab, to test without spending credits.",
   ], { x: 5.6, y: 1.55, w: 7.1, h: 5.2, fontSize: 15 });
   notes(s, `
-To make this usable without a terminal, we built a web page in the same style as our 3KIDNAS galaxy-fitting page. You paste your DCP API key, choose which compute groups may run the job, drop in your audio files and pick the noise conditions. Deploy sends the job; slices come back one by one with a live log. The results show how many genuine clips stayed genuine and how many fakes were caught under each condition, a verdict per file, and a small timeline per file showing the score of every window. There is also a button that runs the very same work function inside your own browser tab, which is how we test the page without spending credits.`, `
+To make this usable without a terminal, we built a web page, hosted at dcp dot dev slash projects slash trustlayer, in the same style as our 3KIDNAS galaxy-fitting page. You paste your DCP API key, choose which compute groups may run the job, drop in your audio files and pick the noise conditions. Deploy sends the job; slices come back one by one with a live log. The results show how many genuine clips stayed genuine and how many fakes were caught under each condition, a verdict per file, and a small timeline per file showing the score of every window. There is also a button that runs the very same work function inside your own browser tab, which is how we test the page without spending credits.`, `
 Visual: screen recording of the page. Files are dragged onto the drop zone, the noise checkboxes ticked, Deploy pressed; the progress bar fills as slices return and the results table populates. Zoom in on one timeline.`);
 }
 
@@ -401,7 +402,7 @@ Visual: three cards; under each heading, a model icon scaled to its size, tiny f
   box(s, { x: 0.9, y: 3.9, w: 11.8, h: 2.55 });
   text(s, "Next steps", { x: 1.15, y: 4.1, w: 11.3, h: 0.45, fontSize: 18, bold: true, fontFace: THEME.headFontFace });
   bullets(s, [
-    "Deploy from the web page to the public network, and host it next to our other demos.",
+    "Run jobs from dcp.dev/projects/trustlayer on the Queen's compute group and the public network.",
     "Run the full ASVspoof 2019 evaluation set: clean, then a noise sweep with several seeds.",
     "Add an MP3 decoder for recordings as they usually arrive, and time WebGPU against WebAssembly.",
     "Convert a speech-encoder detector and a partial-fake localiser, and run them through the same job.",
@@ -437,11 +438,11 @@ Visual: build the diagram in order. The page box sends a job card to the schedul
 {
   const s = pres.addSlide({ masterName: "TITLE", sectionTitle: "Next" });
   s.addText("Try it", { placeholder: "title" });
-  s.addText("Serve the web folder, drop in some audio, choose your noise levels, deploy.", { placeholder: "body" });
+  s.addText("Open dcp.dev/projects/trustlayer, drop in some audio, choose your noise levels, deploy.", { placeholder: "body" });
   wave(s, 1.2, 5.55, 5.3, 1.1, ENV.genuine, SLATE);
   wave(s, 6.83, 5.55, 5.3, 1.1, ENV.synthetic, BRICK);
   notes(s, `
-TrustLayer started as a weekend camp project with a sharp question: can this detector be trusted on noisy audio? Running it on DCP turns that question into something you can ask at any scale, with any noise, and soon with stronger models. The page is ready: serve the folder, drop in your audio, pick the conditions, and deploy.`, `
+TrustLayer started as a weekend camp project with a sharp question: can this detector be trusted on noisy audio? Running it on DCP turns that question into something you can ask at any scale, with any noise, and soon with stronger models. The page is live at dcp.dev/projects/trustlayer: open it, drop in your audio, pick the conditions, and deploy.`, `
 Visual: return to the opening marble surface and the two waveforms. Both play once; the genuine one gets a slate tick, the synthetic one a brick cross. Fade to the title. End card.`);
 }
 

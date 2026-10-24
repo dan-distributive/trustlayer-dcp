@@ -6,3 +6,4 @@ results/*.log
 results/web-smoke.png
 models/export.log
 config.local.json
+node_modules/

@@ -7,6 +7,27 @@ adds noise and runs inference. The client only packs files.
 
 Read `LESSONS.md` for what was found along the way and `PLAN.md` for the design.
 
+## Two launchers, each standalone
+
+The web app and the Node dispatcher are separate front ends to the same job. Each works
+on its own; neither needs the other, and neither needs Python. Both send the same work
+function (`jobs/aasist-work.js`) and model (`models/aasist.onnx`), so their results agree.
+
+| | Web app (`web/`) | Node dispatcher (`jobs/run.js`) |
+| --- | --- | --- |
+| For | anyone, in a browser | scripted or large runs (whole corpora, sweeps) |
+| Hosted at | https://dcp.dev/projects/trustlayer/ | your machine |
+| Needs | nothing to install; static files only (no build, no server code) | Node 18+, `npm install` (dcp-client) |
+| Identity and payment | API key field and the DCP wallet picker | `~/.dcp/id.keystore` + `default.keystore`, or `DCP_IDENTITY_KEY` |
+| Compute group | prefilled `queens`; secret typed once, kept in the browser | `--group`, `DCP_GROUP`, or gitignored `config.local.json` |
+| Input | files dropped on the page | files or folders on disk, optional ASVspoof protocol for labels |
+| Output | tables and timelines on the page, CSV/JSON download | `results/<name>.csv` + `.jsonl` |
+| Try without DCP | "Run in this browser" button | `jobs/local-harness.js` |
+
+`web/` holds symlinks to the work function, the model, the test clips and the deck PDF, so
+it is complete as a folder. Copy it with symlinks resolved to publish it:
+`rsync -aL web/ <host>:<webroot>/projects/trustlayer/`.
+
 ## Layout
 
 | Path | What |
@@ -19,23 +40,24 @@ Read `LESSONS.md` for what was found along the way and `PLAN.md` for the design.
 | `jobs/aasist-work.js` | **the work function**: self-contained, requires only `onnxruntime-dcp/dcp-wasm.js` + `dcp-ort.js` |
 | `jobs/local-harness.js` | runs the work function the way the sandbox does, no DCP |
 | `jobs/run.js` | Node dispatcher (files or folders -> DCP job -> CSV + JSONL) |
-| `web/` | browser app that deploys the job (symlinks to the work function, model and test clips) |
+| `web/` | browser app that deploys the job (symlinks to the work function, model, test clips, deck PDF) |
 | `test-audio/` | fixtures + `reference.json` |
 | `results/` | run outputs |
-| `deck/` | explainer deck and its generator |
+| `deck/` | explainer deck (.pptx, .pdf) and its generator |
 
 ## Run it
 
 ```bash
 git clone --recurse-submodules https://github.com/dan-distributive/trustlayer-dcp
+cd trustlayer-dcp && npm install        # dcp-client (dispatcher), onnxruntime-web (local harness)
 
-# one-time: Python env for export/reference only (not needed at run time)
+# optional, one-time: Python env to re-export the model or rebuild the reference (not needed to run anything)
 python3.12 -m venv .venv && .venv/bin/pip install torch==2.5.1 onnx onnxruntime onnxscript numpy==2.1.3 scipy==1.14.1 soundfile==0.13.1
 .venv/bin/python tools/export_onnx.py
 .venv/bin/python -I tools/make_test_audio.py
 
 # local, no DCP: must match the Python reference to ~1e-6
-node jobs/local-harness.js --check test-audio/reference.json test-audio/*.wav test-audio/*.flac
+npm run harness
 
 # real DCP. Default compute group comes from the gitignored config.local.json
 # ({"group": "queens:<joinSecret>"}) or DCP_GROUP; --group overrides. Never commit a secret.
@@ -43,13 +65,10 @@ node jobs/run.js --snrs null,20,10,0 test-audio/genuine_?.wav test-audio/synthet
 # ASVspoof-style corpus with labels from the protocol file
 node jobs/run.js --protocol ASVspoof2019.LA.cm.eval.trl.txt --per-slice 16 LA/ASVspoof2019_LA_eval/flac
 
-# web app: serve web/ itself (fetch() fails under file://)
-cd web && python3 -m http.server 8000     # open http://localhost:8000/ (group prefilled as queens; type the secret once, the browser keeps it)
-node tools/smoke_web.js                   # headless check
+# web app, local copy for development (the public one is at dcp.dev/projects/trustlayer)
+cd web && python3 -m http.server 8000     # http://localhost:8000/ ; fetch() fails under file://
+npm run smoke-web                         # headless check
 ```
-
-To deploy the web app to a static host, copy with symlinks resolved:
-`rsync -aL web/ host:/var/www/dcp.network/trustlayer/`.
 
 ## Job layout
 

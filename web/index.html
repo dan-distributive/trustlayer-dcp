@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TrustLayer on DCP</title>
-<link rel="icon" href="data:,">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>🔊</text></svg>">
 <style>
   :root {
     --bg:#f3f4f7; --panel:#ffffff; --panel-2:#fbfbfd; --ink:#1a2130; --muted:#5c6578;
@@ -51,6 +51,13 @@
   button:disabled { opacity: 0.5; cursor: not-allowed; }
   .group-row { display:flex; gap: 8px; }
   .group-row button { padding: 6px 10px; }
+  /* account fields share the API key's width: 66 hex chars + 1, monospace */
+  .acct { width: fit-content; max-width: 100%; }
+  #apiKey { width: calc(67ch + 22px); max-width: 100%; }
+  #apiKey, #offer, .group-row > input { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .group-row > input, .group-row > .spacer { flex: 1 1 0; min-width: 0; }
+  .group-row > .spacer { padding: 0 10px; border: 1px solid transparent; }   /* same box as an input, so flex shares match */
+  .group-row > .ghost { visibility: hidden; }
   .drop { border: 1.5px dashed var(--border-strong); border-radius: 10px; padding: 18px; text-align:center; color: var(--muted); font-size: 13px; background: var(--panel-2); }
   .drop.over { border-color: var(--accent); color: var(--accent); }
   table { width:100%; border-collapse: collapse; font-size: 12.5px; }
@@ -77,11 +84,30 @@
   .scroll { overflow-x:auto; }
   .warnbox { background: var(--warn-bg); color: var(--warn); border-radius: 8px; padding: 10px 12px; font-size: 13px; margin-bottom: 20px; }
   footer { color: var(--muted); font-size: 12px; margin-top: 32px; }
+  .hero { display: grid; grid-template-columns: 1fr 340px; gap: 28px; align-items: start; margin-bottom: 24px; }
+  .hero .lede { margin: 12px 0 0; }
+  .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 18px; }
+  .fact { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+  .fact .v { white-space: nowrap; font-size: 18px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .fact .k { font-size: 12px; color: var(--muted); line-height: 1.35; }
+  .credit { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 14px; font-size: 13px; color: var(--muted); line-height: 1.45; box-shadow: var(--shadow); }
+  .credit .who { display: grid; grid-template-columns: 96px 1fr; gap: 14px; align-items: center; margin-bottom: 10px; }
+  .credit .photo { display: block; width: 96px; height: 96px; object-fit: cover; border-radius: 10px; }
+  .credit .mono { display: flex; align-items: center; justify-content: center; background: var(--panel-2); border: 1px solid var(--border); color: var(--accent); font: 700 30px Cambria, Georgia, serif; }
+  .credit .kicker { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+  .credit .name { display: block; font: 700 17px Cambria, Georgia, serif; color: var(--ink); margin: 2px 0; text-decoration: none; }
+  .credit .name:hover { color: var(--accent); }
+  .credit .links { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+  .credit a { color: var(--accent); }
+  @media (max-width: 860px) { .hero { grid-template-columns: 1fr; } }
+  @media (max-width: 520px) { .facts { grid-template-columns: 1fr; } .fact { display: flex; gap: 10px; align-items: baseline; } }
   @media (max-width: 600px) { section.card { padding: 16px; } .hide-sm { display:none; } }
 </style>
 </head>
 <body>
 <main>
+  <div class="hero">
+  <div>
   <p class="eyebrow">TrustLayer · DCP</p>
   <h1>Speech deepfake scan on the DCP network</h1>
   <p class="lede">
@@ -89,6 +115,25 @@
     Your browser only packs the files. Each DCP worker decodes, resamples, slices the audio into 4-second windows,
     adds the noise conditions you choose and runs the model.
   </p>
+  <div class="facts">
+    <div class="fact"><div class="v">1.6 MB</div><div class="k">AASIST as ONNX, sent with every job</div></div>
+    <div class="fact"><div class="v">WAV · FLAC</div><div class="k">any sample rate, decoded on the worker</div></div>
+    <div class="fact"><div class="v">≈ 0.8 s</div><div class="k">per 4-second window on one CPU core</div></div>
+  </div>
+  </div>
+  <aside class="credit" aria-label="Whose project this is">
+    <div class="who">
+      <img class="photo" src="reyan-sehgal.jpg" alt="Reyan Sehgal" onerror="this.replaceWith(Object.assign(document.createElement('div'), { className: 'photo mono', textContent: 'RS', role: 'img', ariaLabel: 'Reyan Sehgal' }))">
+      <div>
+        <div class="kicker">The project</div>
+        <a class="name" href="https://github.com/ReyanSehgal/TrustLayer-Camp-QMIND-MVP" rel="noopener">Reyan Sehgal</a>
+        <div>Project Manager, QMIND<br>Queen's University</div>
+      </div>
+    </div>
+    <div>Led TrustLayer at QMIND Camp with Jinpeng, Kyle, Daniel, Shreya and Abdullah, advised by Shaina Raza. The team tested NAVER's AASIST detector under noise; this job runs their experiment on DCP.</div>
+    <div class="links"><a href="trustlayer-explainer.pdf">How it works (PDF)</a> · <a href="https://qmind.ca" rel="noopener">QMIND.ca</a> · <a href="https://github.com/dan-distributive/trustlayer-dcp" rel="noopener">Code</a></div>
+  </aside>
+  </div>
   <div class="warnbox" id="fileWarn" hidden>
     This page is opened as a <code>file://</code> URL, so it can't load the model or sample clips.
     Serve this folder instead: <code>cd web &amp;&amp; python3 -m http.server 8000</code>, then open <code>http://localhost:8000/</code>.
@@ -97,9 +142,10 @@
   <section class="card">
     <h2><span class="n">1</span>DCP account</h2>
     <p class="sub">Your API key sets the identity the job runs under; payment comes from the wallet you pick when you deploy. Compute groups decide which workers can take the slices.</p>
+    <div class="acct">
     <div class="field">
       <label for="apiKey">API key (identity)</label>
-      <input type="text" id="apiKey" placeholder="0x… (blank: use the wallet picker)">
+      <input type="text" id="apiKey" placeholder="0x…">
     </div>
     <div class="field">
       <label>Compute group(s)</label>
@@ -107,8 +153,14 @@
       <button type="button" class="secondary" id="addGroup" style="margin-top:8px">+ Add group</button>
       <p class="sub" style="margin:6px 0 0">Leave the joinKey blank to deploy to the public network.</p>
     </div>
-    <div class="row">
-      <div class="field"><label for="offer">Slice payment offer (DCC)</label><input type="number" id="offer" value="1.000" min="0" step="0.001"></div>
+    <div class="field">
+      <label for="offer">Slice payment offer (DCC)</label>
+      <div class="group-row">
+        <input type="number" id="offer" value="0.310" min="0" step="0.001">
+        <div class="spacer"></div>
+        <button type="button" class="secondary ghost" tabindex="-1" aria-hidden="true">×</button>
+      </div>
+    </div>
     </div>
   </section>
 
@@ -179,7 +231,6 @@
 <script>
 'use strict';
 const $ = (id) => document.getElementById(id);
-const ORT_PACKAGES = ['onnxruntime-dcp/dcp-wasm.js', 'onnxruntime-dcp/dcp-ort.js'];
 const ORT_CDN = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.23.0/dist/';
 const SAMPLE_FILES = ['genuine_1.wav', 'genuine_2.wav', 'genuine_3.wav', 'genuine_4.wav', 'synthetic_1.wav', 'synthetic_2.wav',
   'synthetic_3.wav', 'synthetic_4.wav', 'spliced_g_s_g.flac', 'genuine_1_44100.flac'];
@@ -356,16 +407,41 @@ $('deploy').addEventListener('click', async () => {
     if (typeof dcp === 'undefined') throw new Error('dcp-client did not load (check the network or an ad blocker)');
     status('run', 'connecting');
     await ensureIdentity();
+
+    /* input set */
     const slices = slicesFor(p);
-    const options = { ep: $('webgpu').checked ? 'webgpu' : 'wasm', batch: 8, aggregate: 'min' };
-    const job = dcp.compute.for(slices, aasistWork, [await getModel(), p, options]);
-    job.requires(ORT_PACKAGES);
-    job.public = { name: `TrustLayer AASIST: ${files.length} clips`, description: 'Speech deepfake scoring (AASIST, ONNX)' };
+
+    /* static args */
+    const args = [await getModel(), p, { ep: $('webgpu').checked ? 'webgpu' : 'wasm', batch: 8, aggregate: 'min' }];
+
+    /* DCP job */
+    const job = dcp.compute.for(slices, aasistWork, args);
+    
+    /* public info */
+    job.public = { 
+      name: '🔊 TrustLayer AASIST',
+      description: `${files.length} clips; speech deepfake scoring (AASIST, ONNX)`,
+      link: 'dcp.dev/demos/trustlayer'
+    };
+
+    /* required packages */
+    job.requires([
+      'onnxruntime-dcp/dcp-wasm.js',
+      'onnxruntime-dcp/dcp-ort.js'
+    ]);
+    
+    /* compute group(s) */
     const groups = computeGroups();
     if (groups) job.computeGroups = groups;
+
+    /* events */
     currentJob = job;
     let done = 0;
-    job.on('accepted', () => { status('run', 'running'); log(`job ${job.id} accepted: ${slices.length} slices`); $('cancel').hidden = false; });
+    job.on('accepted', () => {
+      status('run', 'running');
+      log(`job ${job.id} accepted: ${slices.length} slices`);
+      $('cancel').hidden = false;
+    });
     job.on('readystatechange', (s) => log('state: ' + s));
     job.on('result', (ev) => {
       done++;
@@ -378,6 +454,8 @@ $('deploy').addEventListener('click', async () => {
     job.on('error', (e) => log('slice error: ' + (e.message || e), true));
     job.on('console', (c) => log('worker: ' + (c.message ?? JSON.stringify(c))));
     status('run', 'deploying');
+    
+    /* execute job */
     await job.exec(+$('offer').value || dcp.compute.marketValue);
     status('ok', 'done');
   } catch (e) {

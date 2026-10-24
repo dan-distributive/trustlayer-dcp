@@ -101,3 +101,12 @@ Running log, newest at the bottom. Each entry: what was tried, what happened, wh
   localStorage keeps it in that browser. The secret is never in the repo or the hosted page.
 - The local Mac worker is not in `queens` (it joins meru, legendre117, legendre153), so a
   queens job waits for a Queen's worker unless this worker is added to the group.
+
+## 2026-10-24: packaging for others
+
+- Web page: researcher card (Reyan Sehgal, QMIND) beside the title, photo padded at the top so
+  the square crop keeps his head; one "How it works (PDF)" link. Hosted at
+  dcp.dev/projects/trustlayer; the deck now points there instead of "serve the folder".
+- The dispatcher was quietly resolving dcp-client from `~/DCP/node_modules`. Added
+  `package.json` (dcp-client; onnxruntime-web 1.23 for the harness) so a fresh clone works
+  after `npm install`. Harness on ORT 1.23 matches the Python reference to 3e-6, same as 1.26.

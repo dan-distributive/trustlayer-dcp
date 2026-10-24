@@ -11,7 +11,8 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
-const ORT_WEB = process.env.ORT_WEB || path.join(process.env.HOME, 'DCP/distributed-pipelining/node_modules/onnxruntime-web');
+// onnxruntime-web from `npm install` (devDependency); ORT_WEB overrides with another build.
+const ORT_WEB = process.env.ORT_WEB || 'onnxruntime-web';
 
 function sandboxed() {
   const src = fs.readFileSync(path.join(__dirname, 'aasist-work.js'), 'utf8');
