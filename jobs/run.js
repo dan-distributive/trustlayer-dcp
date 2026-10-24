@@ -5,7 +5,8 @@
  *
  *   node jobs/run.js [options] <files or directories...>
  *
- *   --group key:secret    compute group (default: public)
+ *   --group key:secret    compute group (default: DCP_GROUP, else "group" in the
+ *                         gitignored config.local.json, else public)
  *   --per-slice K         files per slice (default 4)
  *   --snrs null,20,10,0   conditions; null = clean (default)
  *   --seeds 42,43         noise seeds per SNR (default 42)
@@ -44,6 +45,12 @@ function parseArgs(argv) {
   return o;
 }
 
+// Join secrets stay out of the repo: config.local.json is gitignored.
+function defaultGroup() {
+  if (process.env.DCP_GROUP) return process.env.DCP_GROUP;
+  try { return JSON.parse(fs.readFileSync(path.join(ROOT, 'config.local.json'), 'utf8')).group || null; } catch { return null; }
+}
+
 function listAudio(inputs) {
   const out = [];
   const walk = (p) => {
@@ -72,6 +79,7 @@ function toCsv(rows) {
 
 async function main() {
   const o = parseArgs(process.argv.slice(2));
+  if (!o.group) o.group = defaultGroup();
   let files = listAudio(o.inputs);
   if (o.limit) files = files.slice(0, o.limit);
   if (!files.length) throw new Error('no .wav or .flac inputs');
@@ -111,7 +119,7 @@ async function main() {
   const jsonl = fs.createWriteStream(prefix + '.jsonl');
   const t0 = Date.now();
   let got = 0;
-  job.on('accepted', () => console.log(`job ${job.id} accepted: ${files.length} files in ${slices.length} slices`));
+  job.on('accepted', () => console.log(`job ${job.id} accepted: ${files.length} files in ${slices.length} slices, group ${o.group ? o.group.split(':')[0] : 'public'}`));
   job.on('readystatechange', (s) => console.log('state:', s));
   job.on('result', (ev) => {
     got++;

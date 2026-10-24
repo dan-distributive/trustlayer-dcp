@@ -92,3 +92,12 @@ Running log, newest at the bottom. Each entry: what was tried, what happened, wh
   `test-audio/`, so serving `web/` alone works (3KIDNAS lesson). Copy with `rsync -aL`.
 - Not yet verified: deploying from the browser to real DCP (needs a wallet-picker click). The
   same work function and requires have run on DCP from Node.
+
+## 2026-10-24: Queen's compute group
+
+- Default compute group is now `queens` (Queen's University). The join secret lives only in
+  the gitignored `config.local.json` (or `DCP_GROUP`); `run.js` reads it when `--group` is
+  not given. The web page prefills the joinKey only; the user types the secret, and
+  localStorage keeps it in that browser. The secret is never in the repo or the hosted page.
+- The local Mac worker is not in `queens` (it joins meru, legendre117, legendre153), so a
+  queens job waits for a Queen's worker unless this worker is added to the group.

@@ -37,13 +37,14 @@ python3.12 -m venv .venv && .venv/bin/pip install torch==2.5.1 onnx onnxruntime 
 # local, no DCP: must match the Python reference to ~1e-6
 node jobs/local-harness.js --check test-audio/reference.json test-audio/*.wav test-audio/*.flac
 
-# real DCP (local worker is in meru)
-node jobs/run.js --group <joinKey>:<joinSecret> --snrs null,20,10,0 test-audio/genuine_?.wav test-audio/synthetic_?.wav
+# real DCP. Default compute group comes from the gitignored config.local.json
+# ({"group": "queens:<joinSecret>"}) or DCP_GROUP; --group overrides. Never commit a secret.
+node jobs/run.js --snrs null,20,10,0 test-audio/genuine_?.wav test-audio/synthetic_?.wav
 # ASVspoof-style corpus with labels from the protocol file
-node jobs/run.js --group <joinKey>:<joinSecret> --protocol ASVspoof2019.LA.cm.eval.trl.txt --per-slice 16 LA/ASVspoof2019_LA_eval/flac
+node jobs/run.js --protocol ASVspoof2019.LA.cm.eval.trl.txt --per-slice 16 LA/ASVspoof2019_LA_eval/flac
 
 # web app: serve web/ itself (fetch() fails under file://)
-cd web && python3 -m http.server 8000     # open http://localhost:8000/
+cd web && python3 -m http.server 8000     # open http://localhost:8000/ (group prefilled as queens; type the secret once, the browser keeps it)
 node tools/smoke_web.js                   # headless check
 ```
 

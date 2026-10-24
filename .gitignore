@@ -5,3 +5,4 @@ deck/qa/
 results/*.log
 results/web-smoke.png
 models/export.log
+config.local.json
