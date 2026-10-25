@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /*
- * Headless smoke test of web/index.html: load sample clips, run the work
- * function in the tab (no DCP), check for console errors, save a screenshot.
+ * Headless smoke test of web/index.html: load sample clips, check the deploy
+ * button and the worker QR panel, check for console errors, save a screenshot.
  * No npm deps: Node's WebSocket drives Chrome over the DevTools protocol.
  *
  *   node tools/smoke_web.js [http://localhost:8765/]
@@ -48,21 +48,21 @@ async function main() {
     for (let i = 0; i < 40 && !(await evaluate('files.length')); i++) await sleep(250);
     console.log('files:', await evaluate('document.getElementById("fileSummary").textContent'));
     console.log('plan:', await evaluate('document.getElementById("planLine").textContent'));
-    await evaluate('document.getElementById("local").click()');
-    const t0 = Date.now();
-    let st = '';
-    while (Date.now() - t0 < 300000) {
-      st = await evaluate('document.getElementById("status").textContent');
-      if (/done|failed/.test(st)) break;
-      await sleep(1000);
-    }
-    console.log(`status: ${st} after ${((Date.now() - t0) / 1000).toFixed(0)} s`);
-    console.log('log:\n' + await evaluate('document.getElementById("log").innerText'));
-    console.log('stats:', await evaluate('document.getElementById("stats").innerText.replace(/\\n/g, " | ")'));
-    console.log('by condition:\n' + await evaluate('document.getElementById("accTable").innerText'));
-    console.log('spliced row:', await evaluate('[...document.querySelectorAll("#resTable tr")].map(r => r.innerText.replace(/\\s+/g, " ")).find(t => t.includes("spliced"))'));
-    await send('Emulation.setDeviceMetricsOverride', { width: 1100, height: await evaluate('document.body.scrollHeight'), deviceScaleFactor: 1, mobile: false });
-    const shot = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: true });
+    console.log('deploy enabled:', await evaluate('!document.getElementById("deploy").disabled'));
+    // begin() is what Deploy runs before the wallet step; call it directly to check the worker QR.
+    const qr = async (key, secret) => evaluate(`(() => {
+      const r = groupRows[0]; r.k.value = ${JSON.stringify(key)}; r.s.value = ${JSON.stringify(secret)};
+      begin(plan()); finish();
+      return { href: document.getElementById('qrLink').href, drawn: !!document.querySelector('#qrcode img, #qrcode canvas'),
+               panel: !document.getElementById('runout').hidden, sub: document.getElementById('qrSub').textContent };
+    })()`);
+    console.log('qr, group + secret:', JSON.stringify(await qr('queens', 'test-secret')));
+    console.log('qr, key only:     ', JSON.stringify(await qr('queens', '')));
+    console.log('qr, public:       ', JSON.stringify(await qr('', '')));
+    await qr('queens', 'test-secret');
+    await evaluate(`log('state: deployed'); log('job XXXX accepted: 3 slices'); log('slice 1 done (1/3): 28 windows, 22.9 s on wasm')`);
+    await evaluate('document.getElementById("runout").scrollIntoView({ block: "center" })');
+    const shot = await send('Page.captureScreenshot', { format: 'png' });
     const out = path.join(ROOT, 'results', 'web-smoke.png');
     fs.mkdirSync(path.dirname(out), { recursive: true });
     fs.writeFileSync(out, Buffer.from(shot.result.data, 'base64'));

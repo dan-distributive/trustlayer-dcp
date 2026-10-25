@@ -292,7 +292,7 @@ Visual: three cards rise in turn. On the first, small file icons stack into a sl
     [{ text: "Runtime", options: hdr }, { text: "Largest margin difference", options: hdr }, { text: "Time per 4 s window", options: hdr }],
     ["Python + native ONNX Runtime (reference)", "0", "0.3 s"],
     ["Node + ONNX Runtime WebAssembly (local harness)", "3 × 10⁻⁶", "0.57 s"],
-    ["Chrome tab (web page, \"run in this browser\")", "same function, same results", "0.6 s"],
+    ["Chrome tab (same function, tested in the page)", "same function, same results", "0.6 s"],
     ["DCP worker (native Mac worker, WebAssembly)", "4 × 10⁻⁵ (CSV rounding)", `${SEC_PER_WINDOW.toFixed(1)} s`],
   ];
   s.addTable(rows, { x: 0.6, y: 1.55, w: 7.6, colW: [3.6, 2.4, 1.6], fontSize: 14, fontFace: THEME.bodyFontFace, color: INK, border: { type: "solid", color: STONE2, pt: 0.75 }, fill: { color: "FFFFFF", transparency: 20 }, rowH: 0.62, valign: "middle" });
@@ -316,10 +316,10 @@ Visual: the table fills row by row, each row getting a green tick as it appears.
     "Choose noise levels, seeds and how far windows slide.",
     "Deploy: slices stream back with a live log and progress bar.",
     "Results by condition, a verdict per file, and a timeline of every window. Download as CSV or JSON.",
-    "\"Run in this browser\" runs the same work function in the tab, to test without spending credits.",
+    "A QR code beside the log opens a browser worker in the same compute group, so anyone in the room can help run the job.",
   ], { x: 5.6, y: 1.55, w: 7.1, h: 5.2, fontSize: 15 });
   notes(s, `
-To make this usable without a terminal, we built a web page, hosted at dcp dot dev slash projects slash trustlayer, in the same style as our 3KIDNAS galaxy-fitting page. You paste your DCP API key, choose which compute groups may run the job, drop in your audio files and pick the noise conditions. Deploy sends the job; slices come back one by one with a live log. The results show how many genuine clips stayed genuine and how many fakes were caught under each condition, a verdict per file, and a small timeline per file showing the score of every window. There is also a button that runs the very same work function inside your own browser tab, which is how we test the page without spending credits.`, `
+To make this usable without a terminal, we built a web page, hosted at dcp dot dev slash projects slash trustlayer, in the same style as our 3KIDNAS galaxy-fitting page. You paste your DCP API key, choose which compute groups may run the job, drop in your audio files and pick the noise conditions. Deploy sends the job; slices come back one by one with a live log. The results show how many genuine clips stayed genuine and how many fakes were caught under each condition, a verdict per file, and a small timeline per file showing the score of every window. Beside the log there is a QR code: scan it with a phone or open it on a laptop and that device becomes a DCP worker in the same compute group, so anyone in the room can help run the job.`, `
 Visual: screen recording of the page. Files are dragged onto the drop zone, the noise checkboxes ticked, Deploy pressed; the progress bar fills as slices return and the results table populates. Zoom in on one timeline.`);
 }
 

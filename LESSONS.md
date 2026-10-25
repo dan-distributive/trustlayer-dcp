@@ -110,3 +110,14 @@ Running log, newest at the bottom. Each entry: what was tried, what happened, wh
 - The dispatcher was quietly resolving dcp-client from `~/DCP/node_modules`. Added
   `package.json` (dcp-client; onnxruntime-web 1.23 for the harness) so a fresh clone works
   after `npm install`. Harness on ORT 1.23 matches the Python reference to 3e-6, same as 1.26.
+
+## 2026-10-25: browser deploy confirmed; worker QR
+
+- First deploy from the web page to real DCP worked (job zFLXlUIXYqBKyg48tYZhxQ, 10 files, 3
+  slices, 88 windows). That was the last untested path.
+- Removed "Run in this browser" (and its CDN onnxruntime-web loader); the Node harness covers
+  no-DCP testing. In its place, the run panel shows a "Run a DCP Worker" QR code beside the log
+  once Deploy is clicked: dcp.live/?computeGroups=<joinKey>,<joinSecret> for the first group
+  row, plain dcp.live for public. qrcodejs 1.0.0 from jsDelivr, same as 3KIDNAS.
+- The QR carries the join secret by design: anyone who can see the screen can join the group.
+- smoke_web.js now checks page load, sample clips, the deploy button and the three QR cases.

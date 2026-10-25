@@ -22,11 +22,21 @@ function (`jobs/aasist-work.js`) and model (`models/aasist.onnx`), so their resu
 | Compute group | prefilled `queens`; secret typed once, kept in the browser | `--group`, `DCP_GROUP`, or gitignored `config.local.json` |
 | Input | files dropped on the page | files or folders on disk, optional ASVspoof protocol for labels |
 | Output | tables and timelines on the page, CSV/JSON download | `results/<name>.csv` + `.jsonl` |
-| Try without DCP | "Run in this browser" button | `jobs/local-harness.js` |
+| Bring workers | QR code beside the log opens dcp.live in the first compute group | point workers at the group yourself |
+| Try without DCP | (none; use the Node harness) | `jobs/local-harness.js` |
 
 `web/` holds symlinks to the work function, the model, the test clips and the deck PDF, so
-it is complete as a folder. Copy it with symlinks resolved to publish it:
-`rsync -aL web/ <host>:<webroot>/projects/trustlayer/`.
+it is complete as a folder. To publish, copy it with symlinks resolved (`-L`) and only the
+10 sample clips the page loads (15 files, about 3 MB):
+
+```bash
+rsync -avzL \
+  --include='samples/' \
+  --include='samples/genuine_?.wav' --include='samples/synthetic_?.wav' \
+  --include='samples/spliced_g_s_g.flac' --include='samples/genuine_1_44100.flac' \
+  --exclude='samples/*' \
+  web/ people:~/public_html/trustlayer/
+```
 
 ## Layout
 
@@ -36,7 +46,7 @@ it is complete as a folder. Copy it with symlinks resolved to publish it:
 | `models/aasist.onnx` | exported model, 1.63 MB, opset 17, `waveform [n, 64600]` -> `logits [n, 2]` = `[synthetic, genuine]` |
 | `tools/export_onnx.py` | PyTorch -> ONNX export + parity check (32 windows, native ORT) |
 | `tools/make_test_audio.py` | format variants (WAV/FLAC, 16/24-bit, stereo, 22.05/44.1 kHz, spliced clip) + Python reference margins |
-| `tools/smoke_web.js` | headless Chrome test of the web app (runs the work function in the tab) |
+| `tools/smoke_web.js` | headless Chrome test of the web app (page load, sample clips, worker QR links) |
 | `jobs/aasist-work.js` | **the work function**: self-contained, requires only `onnxruntime-dcp/dcp-wasm.js` + `dcp-ort.js` |
 | `jobs/local-harness.js` | runs the work function the way the sandbox does, no DCP |
 | `jobs/run.js` | Node dispatcher (files or folders -> DCP job -> CSV + JSONL) |

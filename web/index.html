@@ -71,7 +71,16 @@
   .pill { display:inline-flex; align-items:center; gap:6px; font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: var(--panel-2); border: 1px solid var(--border); color: var(--muted); }
   .pill .dot { width:7px; height:7px; border-radius:50%; background: currentColor; }
   .pill.run { color: var(--accent); } .pill.ok { color: var(--ok); } .pill.err { color: var(--err); }
-  .log { font-family: ui-monospace, Menlo, monospace; font-size: 11.5px; background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; max-height: 180px; overflow:auto; margin-top: 12px; white-space: pre-wrap; }
+  .runout { display: grid; grid-template-columns: 1fr 196px; gap: 14px; margin-top: 12px; height: 276px; }
+  .runout[hidden] { display: none; }
+  .log { font-family: ui-monospace, Menlo, monospace; font-size: 11.5px; background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; height: 100%; overflow:auto; white-space: pre-wrap; }
+  .worker-qr { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 12px; text-align: center; }
+  .worker-qr .qr-title { font-size: 13px; font-weight: 700; color: var(--ink); }
+  .worker-qr a { display: block; line-height: 0; border-radius: 6px; }
+  .worker-qr #qrcode { background: #fff; padding: 8px; border-radius: 6px; }
+  .worker-qr #qrcode img, .worker-qr #qrcode canvas { display: block; width: 144px; height: 144px; }
+  .worker-qr .qr-sub { font-size: 11.5px; color: var(--muted); line-height: 1.35; }
+  @media (max-width: 600px) { .runout { grid-template-columns: 1fr; height: auto; } .log { height: 180px; } }
   .log .err { color: var(--err); }
   .bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin-top: 10px; }
   .bar > div { height: 100%; width: 0; background: var(--accent); transition: width .3s; }
@@ -197,12 +206,18 @@
     <p class="sub" id="planLine">Add some audio first.</p>
     <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center">
       <button type="button" id="deploy" disabled>Deploy to DCP</button>
-      <button type="button" class="secondary" id="local" disabled title="Runs the same work function in this tab, no DCP, for testing">Run in this browser</button>
       <button type="button" class="secondary" id="cancel" hidden>Cancel job</button>
       <span class="pill" id="status"><span class="dot"></span>idle</span>
     </div>
     <div class="bar"><div id="bar"></div></div>
-    <div class="log" id="log" hidden></div>
+    <div class="runout" id="runout" hidden>
+      <div class="log" id="log"></div>
+      <aside class="worker-qr" aria-label="Run a DCP Worker">
+        <div class="qr-title">Run a DCP Worker</div>
+        <a id="qrLink" href="https://dcp.live" target="_blank" rel="noopener" title="Open a browser worker"><div id="qrcode"></div></a>
+        <div class="qr-sub" id="qrSub"></div>
+      </aside>
+    </div>
   </section>
 
   <section class="card" id="resultsCard" hidden>
@@ -227,11 +242,11 @@
 </main>
 
 <script src="https://scheduler.distributed.computer/dcp-client/dcp-client.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script src="aasist-work.js"></script>
 <script>
 'use strict';
 const $ = (id) => document.getElementById(id);
-const ORT_CDN = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.23.0/dist/';
 const SAMPLE_FILES = ['genuine_1.wav', 'genuine_2.wav', 'genuine_3.wav', 'genuine_4.wav', 'synthetic_1.wav', 'synthetic_2.wav',
   'synthetic_3.wav', 'synthetic_4.wav', 'spliced_g_s_g.flac', 'genuine_1_44100.flac'];
 const SNR_CHOICES = [null, 30, 20, 10, 5, 0];
@@ -347,7 +362,7 @@ function updatePlan() {
   $('planLine').textContent = files.length
     ? `${files.length} files × ${nConditions(p)} conditions in ${slices} slice${slices > 1 ? 's' : ''}. Window count depends on clip length (one per 4 s, hop ${p.hop / 16000} s).`
     : 'Add some audio first.';
-  $('deploy').disabled = $('local').disabled = !files.length || running;
+  $('deploy').disabled = !files.length || running;
 }
 
 /* ---------- helpers ---------- */
@@ -366,7 +381,7 @@ async function getModel() {
   return modelB64;
 }
 function log(t, err) {
-  const el = $('log'); el.hidden = false;
+  const el = $('log');
   const d = document.createElement('div'); if (err) d.className = 'err'; d.textContent = t;
   el.appendChild(d); el.scrollTop = el.scrollHeight;
 }
@@ -392,9 +407,26 @@ function ensureIdentity() {
   }
   return identityReady;
 }
+// dcp.live joins the first configured compute group; no group means the public network.
+function workerUrl() {
+  const g = (computeGroups() || [])[0];
+  if (!g) return { url: 'https://dcp.live', where: 'the public network' };
+  const q = encodeURIComponent(g.joinKey) + (g.joinSecret ? ',' + encodeURIComponent(g.joinSecret) : '');
+  return { url: 'https://dcp.live/?computeGroups=' + q, where: `the <b>${esc(g.joinKey)}</b> compute group` };
+}
+function showWorkerQr() {
+  const { url, where } = workerUrl();
+  $('qrLink').href = url;
+  $('qrSub').innerHTML = `Scan or click to work on ${where} from any browser.`;
+  $('qrcode').innerHTML = '';
+  if (typeof QRCode !== 'undefined') new QRCode($('qrcode'), { text: url, width: 288, height: 288, colorDark: '#1a2130', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
+  else $('qrcode').textContent = url;
+}
 function begin(p) {
   running = true; lastResults = []; lastPlan = p;
   $('log').innerHTML = ''; $('bar').style.width = '0';
+  $('runout').hidden = false;
+  showWorkerQr();
   updatePlan();
   renderResults();
 }
@@ -466,47 +498,6 @@ $('deploy').addEventListener('click', async () => {
 $('cancel').addEventListener('click', async () => {
   if (!currentJob) return;
   try { await currentJob.cancel(); log('job cancelled'); status('err', 'cancelled'); } catch (e) { log('cancel failed: ' + e.message, true); }
-});
-
-/* ---------- run in this tab (testing) ---------- */
-function loadScript(src) {
-  return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = () => bad(new Error('failed to load ' + src)); document.head.appendChild(s); });
-}
-$('local').addEventListener('click', async () => {
-  const p = plan();
-  begin(p);
-  const hadRequire = 'require' in window, oldRequire = window.require, oldProgress = window.progress;
-  try {
-    status('run', 'loading runtime');
-    if (!window.ortLocal) {
-      const saved = window.ort;
-      await loadScript(ORT_CDN + 'ort.wasm.min.js');
-      window.ortLocal = window.ort;
-      window.ortLocal.env.wasm.wasmPaths = ORT_CDN;
-      window.ortLocal.env.wasm.numThreads = 1;
-      window.ort = saved;
-    }
-    window.require = (n) => (n === 'dcp-ort.js' ? window.ortLocal : {});
-    window.progress = () => true;
-    const slices = slicesFor(p), model = await getModel();
-    status('run', 'running locally');
-    for (let i = 0; i < slices.length; i++) {
-      const res = await aasistWork(slices[i], model, p, { ep: 'wasm', batch: 8, aggregate: 'min' });
-      lastResults.push(res);
-      $('bar').style.width = (100 * (i + 1) / slices.length) + '%';
-      log(`local slice ${i + 1}/${slices.length}: ${res.env.windows} windows, ${(res.env.inferMs / 1000).toFixed(1)} s`);
-      renderResults();
-    }
-    status('ok', 'done (local)');
-  } catch (e) {
-    status('err', 'failed');
-    log(String(e && e.message || e), true);
-  } finally {
-    if (hadRequire) window.require = oldRequire; else delete window.require;
-    if (oldProgress) window.progress = oldProgress; else delete window.progress;
-    window.ort = undefined;   // ORT's UMD script declares a global var, which can't be deleted
-    finish();
-  }
 });
 
 /* ---------- results ---------- */
